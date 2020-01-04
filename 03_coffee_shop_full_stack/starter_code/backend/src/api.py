@@ -1,11 +1,10 @@
-import os
-from flask import Flask, request, jsonify, abort
-from sqlalchemy import exc
 import json
+
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 
-from database.models import db_drop_and_create_all, setup_db, Drink
-from auth.auth import AuthError, requires_auth
+from .auth.auth import requires_auth
+from .database.models import setup_db, Drink, db_drop_and_create_all
 
 app = Flask(__name__)
 setup_db(app)
@@ -16,7 +15,7 @@ CORS(app)
 !! NOTE THIS WILL DROP ALL RECORDS AND START YOUR DB FROM SCRATCH
 !! NOTE THIS MUST BE UNCOMMENTED ON FIRST RUN
 '''
-db_drop_and_create_all()
+# db_drop_and_create_all()
 
 ## ROUTES
 '''
@@ -46,7 +45,7 @@ def get_all_drinks():
 '''
 
 @app.route('/drinks-detail')
-@requires_auth('get:drinks-detail')
+@requires_auth('get:drinks-details')
 def get_drink_detail():   
     drinks_detail = Drink.query.all()
     

@@ -1,5 +1,5 @@
 import json
-from flask import request, _request_ctx_stack
+from flask import request, _request_ctx_stack, abort
 from functools import wraps
 from jose import jwt
 from urllib.request import urlopen
@@ -7,7 +7,7 @@ from urllib.request import urlopen
 
 AUTH0_DOMAIN = 'fsndcoffeeshop.au.auth0.com'
 ALGORITHMS = ['RS256']
-API_AUDIENCE = 'coffeeseller'
+API_AUDIENCE = 'coffeeeshop'
 
 # AuthError Exception
 '''
@@ -41,13 +41,11 @@ def get_token_auth_header():
     auth = request.headers.get("Authorization", None)
     if not auth:
         raise AuthError({
-            "code": "autoirization_header_missing",
-            "decsription": "Authorization headre is execpetd"
+            "code": "authorization_header_missing",
+            "decsription": "Authorization header is execpetd"
             }, 401)
-    parts = auth.split() 
-    if "Authorization" not in request.headers:   
-        abort(401, "No auth header found")    
     header = request.headers["Authorization"].split(' ')
+    print(header)
     
     if len(header) != 2:
         raise AuthError({
@@ -55,22 +53,13 @@ def get_token_auth_header():
             'description': "Token not found"
         }, 401)
         
-    elif len(parts) == 1:
+    elif header[0].lower() != "bearer":
         raise AuthError({
             'code': 'invalid_header',
             'description': 'Token not found'
         }, 401)
-    elif len(parts) == 1:
-        raise AuthError({
-            'code': 'invalid_header',
-            'description': 'Token not found' 
-        }, 401)
-    elif header[0].lower() != 'bearer':
-        abort(401, 'invalid auth header prefix')
         
-        token = parts[1]
-        
-    return token
+    return header[1].split()
  
  
 '''
@@ -88,7 +77,7 @@ def get_token_auth_header():
 '''
 
 
-def check_permissions(permission, payload):
+def check_permissions(permissions, payload):
     if 'permissions' not in payload:
         raise AuthError({
             'code': 'invalid_claims',
@@ -99,7 +88,7 @@ def check_permissions(permission, payload):
         raise AuthError({
             'code': 'unathorized',
             'description': 'Permissions not found'
-        }, 403)
+        }, 401)
     return True
 
         
@@ -194,10 +183,16 @@ def requires_auth(permission=''):
     def requires_auth_decorator(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
+            global payload
             token = get_token_auth_header()
-            payload = verify_decode_jwt(token)
+            try:
+                payload = verify_decode_jwt(token)
+            except AuthError:
+                abort(401)
             check_permissions(permission, payload)
-            return f(payload, *args, **kwargs)
+            return f(*args, **kwargs)
 
         return wrapper
+
     return requires_auth_decorator
+
