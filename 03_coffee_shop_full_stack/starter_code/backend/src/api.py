@@ -1,6 +1,6 @@
 import json
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, abort
 from flask_cors import CORS
 
 from .auth.auth import requires_auth
@@ -46,12 +46,12 @@ def get_all_drinks():
 
 @app.route('/drinks-detail')
 @requires_auth('get:drinks-details')
-def get_drink_detail():   
+def get_drink_detail(payload):   
     drinks_detail = Drink.query.all()
     
     return jsonify({
             "suceess": True,
-            "drinks": [drink.short() for drink in drinks_detail]
+            "drinks": [drink.long() for drink in drinks_detail]
     }), 200
     
 '''
@@ -67,9 +67,9 @@ def get_drink_detail():
 @app.route('/drinks', methods=['POST'])
 def create_drink():
     
-    data = request.get_json
+    data = request.get_json()
     
-    recipe = data['recipe']
+    recipe = data.get('recipe')
      
     if isinstance(recipe, dict):
         
@@ -99,7 +99,7 @@ def create_drink():
 @app.route('/drinks/<int:id>', methods =['PATCH'])
 @requires_auth('patch:drinks')
 def update_drinks(id):
-    data = request.get_json
+    data = request.get_json()
     
     drink = Drink.query.filter(Drink.id ==id).one_or_none()
 
@@ -108,7 +108,8 @@ def update_drinks(id):
     
     drink.recipe = data.get("recipe", drink.recipe)
     drink.title = data.get("title", drink.title)
-    if isinstance(drink.reicpe, list):
+    
+    if isinstance(drink.recipe, list):
         drink.recipe = json.dumps(drink.recipe)   
 
     drink.update()
@@ -128,11 +129,13 @@ def update_drinks(id):
         or appropriate status code indicating reason for failure
 '''
 @app.route('/drinks/<int:id>', methods=['DELETE'])
-@requires_auth('deleterinks:d')
-def delete_drinks(id):
+@requires_auth('delete:drinks')
+def delete_drinks(id, payload):
+    
     drink = Drink.query.filter(Drink.id ==id).one_or_none()
     if not drink:
         abort(404)
+        
     drink.delete()
     
     return jsonify({
@@ -140,9 +143,6 @@ def delete_drinks(id):
         "delete": id
     })
     
-    
-    
-
 
 ## Error Handling
 '''
