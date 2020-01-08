@@ -44,10 +44,11 @@ def get_all_drinks():
         or appropriate status code indicating reason for failure
 '''
 
-@app.route('/drinks-detail')
+@app.route('/drinks-details')
 @requires_auth('get:drinks-details')
-def get_drink_detail(payload):   
+def get_drink_detail():   
     drinks_detail = Drink.query.all()
+    # print(drinks_detail)
     
     return jsonify({
             "suceess": True,
@@ -130,7 +131,7 @@ def update_drinks(id):
 '''
 @app.route('/drinks/<int:id>', methods=['DELETE'])
 @requires_auth('delete:drinks')
-def delete_drinks(id, payload):
+def delete_drinks(id):
     
     drink = Drink.query.filter(Drink.id ==id).one_or_none()
     if not drink:
